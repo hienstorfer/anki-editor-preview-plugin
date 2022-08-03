@@ -75,7 +75,10 @@ class EditorPreview(object):
         c = note.ephemeral_card()
         a = mw.prepare_card_text_for_display(c.answer())
         a = gui_hooks.card_will_show(a, c, "clayoutAnswer")
-        bodyclass = theme_manager.body_classes_for_card_ord(c.ord, mw.pm.night_mode())
+        if theme_manager.night_mode:
+            bodyclass = theme_manager.body_classes_for_card_ord(c.ord, mw.pm.night_mode())
+        else:
+            bodyclass = theme_manager.body_classes_for_card_ord(c.ord)
 
         return f"_showAnswer({json.dumps(a)},'{bodyclass}');"
 
