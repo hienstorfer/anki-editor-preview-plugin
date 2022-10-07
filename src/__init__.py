@@ -79,6 +79,7 @@ class EditorPreview(object):
             bodyclass = theme_manager.body_classes_for_card_ord(c.ord, mw.pm.night_mode())
         else:
             bodyclass = theme_manager.body_classes_for_card_ord(c.ord)
+        bodyclass += " editor-preview"
 
         return f"_showAnswer({json.dumps(a)},'{bodyclass}');"
 
