@@ -6,6 +6,7 @@ from aqt.utils import *
 from aqt.theme import theme_manager
 from aqt.webview import AnkiWebView
 
+config = mw.addonManager.getConfig(__name__)
 
 class EditorPreview(object):
     js=[
@@ -37,6 +38,9 @@ class EditorPreview(object):
             context=ed,
         )
 
+        if not config['showPreviewAutomatically']:
+            ed.webview.hide()
+
         self._inject_splitter(ed)
         gui_hooks.editor_did_fire_typing_timer.append(lambda o: self.onedit_hook(ed, o))
         gui_hooks.editor_did_load_note.append(lambda o: None if o != ed else self.editor_note_hook(o))
@@ -49,9 +53,10 @@ class EditorPreview(object):
         layout.removeWidget(editor.web)
         split.addWidget(editor.web)
         split.addWidget(editor.webview)
-        split.setStretchFactor(0, 0)
-        split.setStretchFactor(1, 1)
-        split.setStretchFactor(2, 1)
+        splitRatio = config['splitRatio']
+        upperR, lowerR = [int(r) for r in splitRatio.split(":")]
+        split.setStretchFactor(0, upperR)
+        split.setStretchFactor(1, lowerR)
         layout.insertWidget(web_index, split)
 
 
@@ -59,7 +64,9 @@ class EditorPreview(object):
         self.onedit_hook(editor, editor.note)
 
     def editor_init_button_hook(self, buttons, editor):
-        b = editor.addButton(icon=None, cmd="_editor_toggle_preview", label='P', tip='Toggle Live Preview',
+        addon_path = os.path.dirname(__file__)
+        icons_dir = os.path.join(addon_path, 'icons')
+        b = editor.addButton(icon=os.path.join(icons_dir, 'file.svg'), cmd="_editor_toggle_preview", tip='Toggle Live Preview',
                     func=lambda o=editor: self.onEditorPreviewButton(o), disables=False
              )
         buttons.append(b)
