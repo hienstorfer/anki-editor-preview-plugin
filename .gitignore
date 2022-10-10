@@ -166,3 +166,6 @@ tags
 # End of https://www.toptal.com/developers/gitignore/api/vim,python
 *.ankiaddon
 .DS_Store
+
+# Stores actual addon config if the src directory is symlinked into an anki installation during development
+src/meta.json

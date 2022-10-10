@@ -6,6 +6,6 @@ if [ -d src/__pycache__ ]; then
 fi
 
 cd src
-zip -r ../editor-preview.ankiaddon *
+zip -r ../editor-preview.ankiaddon --exclude meta.json -- *
 cd ..
 unzip -l  editor-preview.ankiaddon
