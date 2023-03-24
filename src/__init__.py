@@ -29,9 +29,9 @@ class EditorPreview(object):
 
 
     def editor_init_hook(self, ed: editor.Editor):
-        ed.webview = AnkiWebView(title="editor_preview")
+        ed.editor_preview = AnkiWebView(title="editor_preview")
         # This is taken out of clayout.py
-        ed.webview.stdHtml(
+        ed.editor_preview.stdHtml(
             ed.mw.reviewer.revHtml(),
             css=["css/reviewer.css"],
             js=self.js,
@@ -39,24 +39,50 @@ class EditorPreview(object):
         )
 
         if not config['showPreviewAutomatically']:
-            ed.webview.hide()
+            ed.editor_preview.hide()
 
         self._inject_splitter(ed)
         gui_hooks.editor_did_fire_typing_timer.append(lambda o: self.onedit_hook(ed, o))
         gui_hooks.editor_did_load_note.append(lambda o: None if o != ed else self.editor_note_hook(o))
 
+    def _get_splitter(self, editor):
+        layout = editor.outerLayout
+        mainR, editorR = [int(r) for r in config['splitRatio'].split(":")]
+        location = config['location']
+        split = QSplitter()
+        if location == 'above':
+            split.setOrientation(Qt.Vertical)
+            split.addWidget(editor.editor_preview)
+            split.addWidget(editor.web)
+            sizes = [editorR, mainR]
+        elif location ==  'below':
+            split.setOrientation(Qt.Vertical)
+            split.addWidget(editor.web)
+            split.addWidget(editor.editor_preview)
+            sizes = [mainR, editorR]
+        elif location == 'left':
+            split.setOrientation(Qt.Horizontal)
+            split.addWidget(editor.editor_preview)
+            split.addWidget(editor.web)
+            sizes = [editorR, mainR]
+        elif location == 'right':
+            split.setOrientation(Qt.Horizontal)
+            split.addWidget(editor.web)
+            split.addWidget(editor.editor_preview)
+            sizes = [mainR, editorR]
+        else:
+            raise ValueError("Invalid value for config key location")
+
+        split.setSizes(sizes)
+        return split
+
+
     def _inject_splitter(self, editor: editor.Editor):
         layout = editor.outerLayout
-        split = QSplitter()
-        split.setOrientation(Qt.Vertical)
         web_index = layout.indexOf(editor.web)
         layout.removeWidget(editor.web)
-        split.addWidget(editor.web)
-        split.addWidget(editor.webview)
-        splitRatio = config['splitRatio']
-        upperR, lowerR = [int(r) for r in splitRatio.split(":")]
-        split.setStretchFactor(0, upperR)
-        split.setStretchFactor(1, lowerR)
+
+        split = self._get_splitter(editor)
         layout.insertWidget(web_index, split)
 
 
@@ -72,10 +98,10 @@ class EditorPreview(object):
         buttons.append(b)
 
     def onEditorPreviewButton(self, origin: editor.Editor):
-        if origin.webview.isHidden():
-            origin.webview.show()
+        if origin.editor_preview.isHidden():
+            origin.editor_preview.show()
         else:
-            origin.webview.hide()
+            origin.editor_preview.hide()
 
 
     def _obtainCardText(self, note):
@@ -92,6 +118,6 @@ class EditorPreview(object):
 
     def onedit_hook(self, editor, origin):
         if editor.note == origin:
-            editor.webview.eval(self._obtainCardText(editor.note))
+            editor.editor_preview.eval(self._obtainCardText(editor.note))
 
 eprev = EditorPreview()

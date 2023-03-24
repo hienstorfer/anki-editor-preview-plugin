@@ -1,1 +1,5 @@
-{"showPreviewAutomatically": true, "splitRatio": "4:1"}
+{
+  "showPreviewAutomatically": true,
+  "splitRatio": "1:1",
+  "location": "below"
+}
