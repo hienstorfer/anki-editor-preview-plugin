@@ -1,0 +1,31 @@
+---
+kind: pipeline
+type: docker
+name: Build Anki Plugin
+
+trigger:
+  event:
+    include:
+      - tag
+
+steps:
+  - name: Build Archive
+    image: debian:bookworm
+    pull: always
+    commands:
+      - apt-get update && apt-get install -y zip
+      - ./build.sh
+
+  - name: Upload Artifact to Gitea
+    depends_on:
+      - Build Archive
+    image: plugins/gitea-release
+    settings:
+      api_key:
+        from_secret: gitea_api_token
+      checksum: sha256
+      base_url: https://git.tobiasmanske.de
+      files: editor-preview.ankiaddon
+
+image_pull_secrets:
+  - registry
