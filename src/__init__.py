@@ -19,7 +19,10 @@ class EditorPreview(object):
     def __init__(self):
         gui_hooks.editor_did_init.append(self.editor_init_hook)
         gui_hooks.editor_did_init_buttons.append(self.editor_init_button_hook)
-        if int(buildinfo.version.split(".")[2]) < 45:  # < 2.1.45
+        buildversion = buildinfo.version.split(".")
+
+        # Anki changed their versioning scheme in 2023 to year.month(.patch), causing things to explode here.
+        if not int(buildversion[0]) >= 23 and int(buildversion[2]) < 45:  # < 2.1.45
             self.js = [
                 "js/vendor/jquery.min.js",
                 "js/vendor/css_browser_selector.min.js",
