@@ -56,22 +56,22 @@ class EditorPreview(object):
         location = config["location"]
         split = QSplitter()
         if location == "above":
-            split.setOrientation(Qt.Vertical)
+            split.setOrientation(Qt.Orientation.Vertical)
             split.addWidget(editor.editor_preview)
             split.addWidget(editor.web)
             sizes = [editorR, mainR]
         elif location == "below":
-            split.setOrientation(Qt.Vertical)
+            split.setOrientation(Qt.Orientation.Vertical)
             split.addWidget(editor.web)
             split.addWidget(editor.editor_preview)
             sizes = [mainR, editorR]
         elif location == "left":
-            split.setOrientation(Qt.Horizontal)
+            split.setOrientation(Qt.Orientation.Horizontal)
             split.addWidget(editor.editor_preview)
             split.addWidget(editor.web)
             sizes = [editorR, mainR]
         elif location == "right":
-            split.setOrientation(Qt.Horizontal)
+            split.setOrientation(Qt.Orientation.Horizontal)
             split.addWidget(editor.web)
             split.addWidget(editor.editor_preview)
             sizes = [mainR, editorR]
