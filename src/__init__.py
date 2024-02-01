@@ -90,6 +90,10 @@ class EditorPreview(object):
         layout.insertWidget(web_index, split)
 
     def editor_note_hook(self, editor):
+        # The initial loading of notes will also trigger an editing event
+        # which will cause a second refresh
+        # It is disabled here and enabled after the first editing
+        editor.need_reload_on_edit = False
         self.onedit_hook(editor, editor.note)
 
     def editor_init_button_hook(self, buttons, editor):
@@ -121,7 +125,10 @@ class EditorPreview(object):
 
     def onedit_hook(self, editor, origin):
         if editor.note == origin:
-            editor.editor_preview.eval(self._obtainCardText(editor.note))
+            if editor.need_reload_on_edit:
+                editor.editor_preview.eval(self._obtainCardText(editor.note))
+            else:
+                editor.need_reload_on_edit = True
 
 
 eprev = EditorPreview()
