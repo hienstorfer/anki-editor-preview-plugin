@@ -51,28 +51,27 @@ class EditorPreview(object):
         )
 
     def _get_splitter(self, editor):
-        layout = editor.outerLayout
         mainR, editorR = [int(r) for r in config["splitRatio"].split(":")]
         location = config["location"]
         split = QSplitter()
         if location == "above":
             split.setOrientation(Qt.Orientation.Vertical)
             split.addWidget(editor.editor_preview)
-            split.addWidget(editor.web)
+            split.addWidget(editor.wrapped_web)
             sizes = [editorR, mainR]
         elif location == "below":
             split.setOrientation(Qt.Orientation.Vertical)
-            split.addWidget(editor.web)
+            split.addWidget(editor.wrapped_web)
             split.addWidget(editor.editor_preview)
             sizes = [mainR, editorR]
         elif location == "left":
             split.setOrientation(Qt.Orientation.Horizontal)
             split.addWidget(editor.editor_preview)
-            split.addWidget(editor.web)
+            split.addWidget(editor.wrapped_web)
             sizes = [editorR, mainR]
         elif location == "right":
             split.setOrientation(Qt.Orientation.Horizontal)
-            split.addWidget(editor.web)
+            split.addWidget(editor.wrapped_web)
             split.addWidget(editor.editor_preview)
             sizes = [mainR, editorR]
         else:
@@ -82,9 +81,19 @@ class EditorPreview(object):
         return split
 
     def _inject_splitter(self, editor: editor.Editor):
-        layout = editor.outerLayout
+        layout = editor.web.parentWidget().layout()
+        if layout is None:
+            layout = QVBoxLayout()
+            editor.web.parentWidget().setLayout(layout)
         web_index = layout.indexOf(editor.web)
         layout.removeWidget(editor.web)
+
+        # Wrap a widget on the outer layer of the webview
+        # So that other plugins can continue to modify the layout
+        editor.wrapped_web = QWidget()
+        wrapLayout = QHBoxLayout()
+        editor.wrapped_web.setLayout(wrapLayout)
+        wrapLayout.addWidget(editor.web)
 
         split = self._get_splitter(editor)
         layout.insertWidget(web_index, split)
