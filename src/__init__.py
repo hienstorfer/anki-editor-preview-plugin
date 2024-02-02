@@ -1,4 +1,5 @@
 import json
+from typing import Set
 
 from anki import hooks, buildinfo
 from aqt import editor, gui_hooks, mw
@@ -10,6 +11,7 @@ config = mw.addonManager.getConfig(__name__)
 
 
 class EditorPreview(object):
+    editors: Set[editor.Editor] = set()
     js = [
         "js/mathjax.js",
         "js/vendor/mathjax/tex-chtml.js",
@@ -19,6 +21,8 @@ class EditorPreview(object):
     def __init__(self):
         gui_hooks.editor_did_init.append(self.editor_init_hook)
         gui_hooks.editor_did_init_buttons.append(self.editor_init_button_hook)
+        gui_hooks.editor_did_load_note.append(self.editor_note_hook)
+        gui_hooks.editor_did_fire_typing_timer.append(self.onedit_hook)
         buildversion = buildinfo.version.split(".")
 
         # Anki changed their versioning scheme in 2023 to year.month(.patch), causing things to explode here.
@@ -45,12 +49,9 @@ class EditorPreview(object):
             ed.editor_preview.hide()
 
         self._inject_splitter(ed)
-        gui_hooks.editor_did_fire_typing_timer.append(lambda o: self.onedit_hook(ed, o))
-        gui_hooks.editor_did_load_note.append(
-            lambda o: None if o != ed else self.editor_note_hook(o)
-        )
 
     def _get_splitter(self, editor):
+        layout = editor.outerLayout
         mainR, editorR = [int(r) for r in config["splitRatio"].split(":")]
         location = config["location"]
         split = QSplitter()
@@ -99,11 +100,13 @@ class EditorPreview(object):
         layout.insertWidget(web_index, split)
 
     def editor_note_hook(self, editor):
+        self.editors = set(filter(lambda it: it.note is not None, self.editors))
+        self.editors.add(editor)
         # The initial loading of notes will also trigger an editing event
         # which will cause a second refresh
         # It is disabled here and enabled after the first editing
         editor.need_reload_on_edit = False
-        self.onedit_hook(editor, editor.note)
+        self.refresh(editor)
 
     def editor_init_button_hook(self, buttons, editor):
         addon_path = os.path.dirname(__file__)
@@ -132,12 +135,15 @@ class EditorPreview(object):
 
         return f"_showAnswer({json.dumps(a)},'{bodyclass}');"
 
-    def onedit_hook(self, editor, origin):
-        if editor.note == origin:
-            if editor.need_reload_on_edit:
-                editor.editor_preview.eval(self._obtainCardText(editor.note))
-            else:
-                editor.need_reload_on_edit = True
+    def onedit_hook(self, origin):
+        for editor in self.editors:
+            if editor.note == origin:
+                if editor.need_reload_on_edit:
+                    self.refresh(editor)
+                else:
+                    editor.need_reload_on_edit = True
 
+    def refresh(self, editor):
+        editor.editor_preview.eval(self._obtainCardText(editor.note))
 
 eprev = EditorPreview()
