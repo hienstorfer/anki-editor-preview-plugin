@@ -51,8 +51,7 @@ class EditorPreview(object):
         self._inject_splitter(ed)
 
     def _get_splitter(self, editor):
-        layout = editor.outerLayout
-        mainR, editorR = [int(r) for r in config["splitRatio"].split(":")]
+        mainR, editorR = [int(r) * 10000 for r in config["splitRatio"].split(":")]
         location = config["location"]
         split = QSplitter()
         if location == "above":
