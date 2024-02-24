@@ -103,8 +103,8 @@ class EditorPreview(object):
         self.editors.add(editor)
         # The initial loading of notes will also trigger an editing event
         # which will cause a second refresh
-        # It is disabled here and enabled after the first editing
-        editor.need_reload_on_edit = False
+        # Caching the content of notes here will be used to determine if the content has changed
+        editor.cached_fields = list(editor.note.fields)
         self.refresh(editor)
 
     def editor_init_button_hook(self, buttons, editor):
@@ -134,13 +134,11 @@ class EditorPreview(object):
 
         return f"_showAnswer({json.dumps(a)},'{bodyclass}');"
 
-    def onedit_hook(self, origin):
+    def onedit_hook(self, note):
         for editor in self.editors:
-            if editor.note == origin:
-                if editor.need_reload_on_edit:
-                    self.refresh(editor)
-                else:
-                    editor.need_reload_on_edit = True
+            if editor.note == note and editor.cached_fields != note.fields:
+                editor.cached_fields = list(note.fields)
+                self.refresh(editor)
 
     def refresh(self, editor):
         editor.editor_preview.eval(self._obtainCardText(editor.note))
