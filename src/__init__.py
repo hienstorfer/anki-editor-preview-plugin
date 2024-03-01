@@ -32,7 +32,7 @@ class EditorPreview(object):
                 "js/vendor/mathjax/tex-chtml-full.js",
                 "js/reviewer.js",
             ]
-        if not int(buildversion[0]) == 23 and int(buildversion[2]) < 45:  # < 2.1.45
+        elif int(buildversion[0]) < 23 and int(buildversion[2]) < 45:  # < 2.1.45
             self.js = [
                 "js/vendor/jquery.min.js",
                 "js/vendor/css_browser_selector.min.js",
