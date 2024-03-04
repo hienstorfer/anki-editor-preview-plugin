@@ -26,7 +26,7 @@ class EditorPreview(object):
         buildversion = buildinfo.version.split(".")
 
         # Anki changed their versioning scheme in 2023 to year.month(.patch), causing things to explode here.
-        if int(buildversion[0]) >= 24:
+        if int(buildversion[0]) >= 24 or (int(buildversion[0]) == 23 and int(buildversion[1]) == 12 and 2 < len(buildversion) and int(buildversion[2])) >= 1:  # >= 23.12.1
             self.js = [
                 "js/mathjax.js",
                 "js/vendor/mathjax/tex-chtml-full.js",
