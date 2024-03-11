@@ -42,7 +42,7 @@ class EditorPreview(object):
             ]
 
     def editor_init_hook(self, ed: editor.Editor):
-        ed.editor_preview = AnkiWebView(title="editor_preview")
+        ed.editor_preview = AnkiWebView(parent=ed.web, title="editor_preview")
         # This is taken out of clayout.py
         ed.editor_preview.stdHtml(
             ed.mw.reviewer.revHtml(),
