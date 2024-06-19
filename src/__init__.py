@@ -6,10 +6,8 @@ from aqt import editor, gui_hooks, mw
 from aqt.utils import *
 from aqt.theme import theme_manager
 from aqt.webview import AnkiWebView
-from aqt.editor import Editor
 
 config = mw.addonManager.getConfig(__name__)
-
 
 class EditorPreview(object):
     editors: Set[editor.Editor] = set()
@@ -41,16 +39,9 @@ class EditorPreview(object):
                 "js/vendor/mathjax/tex-chtml.js",
                 "js/reviewer.js",
             ]
-            
-        def cleanup_editor_preview(editor):
-            self.editors.discard(editor)
-            if hasattr(editor, "editor_preview"):
-                editor.editor_preview.cleanup()
-                editor.editor_preview.close()
-        Editor.cleanup = hooks.wrap(Editor.cleanup, cleanup_editor_preview)
 
     def editor_init_hook(self, ed: editor.Editor):
-        ed.editor_preview = AnkiWebView(parent=ed.web, title="editor_preview")
+        ed.editor_preview = AnkiWebView(title="editor_preview")
         # This is taken out of clayout.py
         ed.editor_preview.stdHtml(
             ed.mw.reviewer.revHtml(),
@@ -140,7 +131,8 @@ class EditorPreview(object):
             origin.editor_preview.hide()
 
     def _obtainCardText(self, note):
-        c = note.ephemeral_card()
+        card_ordinal = config.get("cardOrdinal", 0)  # default to first card type if not set
+        c = note.ephemeral_card(card_ordinal)
         a = mw.prepare_card_text_for_display(c.answer())
         a = gui_hooks.card_will_show(a, c, "clayoutAnswer")
         bodyclass = theme_manager.body_classes_for_card_ord(c.ord, theme_manager.night_mode)

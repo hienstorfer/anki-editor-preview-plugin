@@ -1,5 +1,6 @@
 {
-  "showPreviewAutomatically": true,
-  "splitRatio": "1:1",
-  "location": "below"
+    "cardOrdinal": 8,
+    "location": "below",
+    "showPreviewAutomatically": true,
+    "splitRatio": "1:1"
 }
