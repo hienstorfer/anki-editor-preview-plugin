@@ -22,16 +22,16 @@ class EditorPreview(object):
         gui_hooks.editor_did_init_buttons.append(self.editor_init_button_hook)
         gui_hooks.editor_did_load_note.append(self.editor_note_hook)
         gui_hooks.editor_did_fire_typing_timer.append(self.onedit_hook)
+        gui_hooks.browser_did_change_row.append(self.on_browser_row_change)
         buildversion = buildinfo.version.split(".")
 
-        # Anki changed their versioning scheme in 2023 to year.month(.patch), causing things to explode here.
-        if int(buildversion[0]) >= 24 or (int(buildversion[0]) == 23 and int(buildversion[1]) == 12 and 2 < len(buildversion) and int(buildversion[2])) >= 1:  # >= 23.12.1
+        if int(buildversion[0]) >= 24 or (int(buildversion[0]) == 23 and int(buildversion[1]) == 12 and 2 < len(buildversion) and int(buildversion[2])) >= 1:
             self.js = [
                 "js/mathjax.js",
                 "js/vendor/mathjax/tex-chtml-full.js",
                 "js/reviewer.js",
             ]
-        elif int(buildversion[0]) < 23 and int(buildversion[2]) < 45:  # < 2.1.45
+        elif int(buildversion[0]) < 23 and int(buildversion[2]) < 45:
             self.js = [
                 "js/vendor/jquery.min.js",
                 "js/vendor/css_browser_selector.min.js",
@@ -42,7 +42,6 @@ class EditorPreview(object):
 
     def editor_init_hook(self, ed: editor.Editor):
         ed.editor_preview = AnkiWebView(title="editor_preview")
-        # This is taken out of clayout.py
         ed.editor_preview.stdHtml(
             ed.mw.reviewer.revHtml(),
             css=["css/reviewer.css"],
@@ -93,8 +92,6 @@ class EditorPreview(object):
         web_index = layout.indexOf(editor.web)
         layout.removeWidget(editor.web)
 
-        # Wrap a widget on the outer layer of the webview
-        # So that other plugins can continue to modify the layout
         editor.wrapped_web = QWidget()
         wrapLayout = QHBoxLayout()
         editor.wrapped_web.setLayout(wrapLayout)
@@ -106,9 +103,6 @@ class EditorPreview(object):
     def editor_note_hook(self, editor):
         self.editors = set(filter(lambda it: it.note is not None, self.editors))
         self.editors.add(editor)
-        # The initial loading of notes will also trigger an editing event
-        # which will cause a second refresh
-        # Caching the content of notes here will be used to determine if the content has changed
         editor.cached_fields = list(editor.note.fields)
         self.refresh(editor)
 
@@ -130,15 +124,16 @@ class EditorPreview(object):
         else:
             origin.editor_preview.hide()
 
-    def _obtainCardText(self, note):
-        card_ordinal = config.get("cardOrdinal", 0)  # default to first card type if not set
-        c = note.ephemeral_card(card_ordinal)
-        a = mw.prepare_card_text_for_display(c.answer())
-        a = gui_hooks.card_will_show(a, c, "clayoutAnswer")
-        bodyclass = theme_manager.body_classes_for_card_ord(c.ord, theme_manager.night_mode)
-        bodyclass += " editor-preview"
+    def _obtainCardText(self, card):
+        if card:
+            a = mw.prepare_card_text_for_display(card.answer())
+            a = gui_hooks.card_will_show(a, card, "clayoutAnswer")
+            bodyclass = theme_manager.body_classes_for_card_ord(card.ord, theme_manager.night_mode)
+            bodyclass += " editor-preview"
 
-        return f"_showAnswer({json.dumps(a)},'{bodyclass}');"
+            return f"_showAnswer({json.dumps(a)},'{bodyclass}');"
+        else:
+            return "_showAnswer('', '');"
 
     def onedit_hook(self, note):
         for editor in self.editors:
@@ -146,7 +141,18 @@ class EditorPreview(object):
                 editor.cached_fields = list(note.fields)
                 self.refresh(editor)
 
+    def on_browser_row_change(self, browser):
+        if browser.card:
+            self.current_card_id = browser.card.id
+            self.refresh_all_editors()
+
+    def refresh_all_editors(self):
+        for editor in self.editors:
+            self.refresh(editor)
+
     def refresh(self, editor):
-        editor.editor_preview.eval(self._obtainCardText(editor.note))
+        if hasattr(self, 'current_card_id'):
+            card = mw.col.getCard(self.current_card_id)
+            editor.editor_preview.eval(self._obtainCardText(card))
 
 eprev = EditorPreview()
